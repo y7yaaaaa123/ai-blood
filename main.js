@@ -8,23 +8,40 @@ import './style.css';
 // Get your Gemini API key by:
 // - Selecting "Add Gemini API" in the "Firebase Studio" panel in the sidebar
 // - Or by visiting https://g.co/ai/idxGetGeminiKey
-let API_KEY = 'TODO';
+let API_KEY = 'AIzaSyARI7d7w6TEybZ4mveUpYWhvWLOwnZQjfA';
 
 let form = document.querySelector('form');
 let promptInput = document.querySelector('input[name="prompt"]');
 let output = document.querySelector('.output');
+    // يظهر اسم الملف عند اختياره
+    const fileInput = document.getElementById('fileInput');
+    const uploadText = document.querySelector('.upload-text');
 
+    fileInput.addEventListener('change', function () {
+      if (this.files && this.files.length > 0) {
+        uploadText.textContent = `Selected: ${this.files[0].name}`;
+      } else {
+        uploadText.textContent = 'Drag your file here or';
+      }
+    });
 form.onsubmit = async (ev) => {
   ev.preventDefault();
   output.textContent = 'Generating...';
 
   try {
-    // Load the image as a base64 string
-    let imageUrl = form.elements.namedItem('chosen-image').value;
-    let imageBase64 = await fetch(imageUrl)
-      .then(r => r.arrayBuffer())
-      .then(a => Base64.fromByteArray(new Uint8Array(a)));
+    const fileInput = document.getElementById('fileInput');
+   const file = fileInput.files[0];
 
+
+   const imageBase64 = await new Promise((resolve, reject) => {
+     const reader = new FileReader();
+     reader.readAsDataURL(file);
+     reader.onload = () => {
+       const base64String = reader.result.split(',')[1]; // Extract base64 part
+       resolve(base64String);
+     };
+     reader.onerror = reject;
+   });
     // Assemble the prompt by combining the text with the chosen image
     let contents = [
       {
