@@ -1,14 +1,7 @@
-import OpenAI from "openai";
 import MarkdownIt from "markdown-it";
 import './style.css';
 
 const md = new MarkdownIt(); // ✅ هنا أنشأنا الـ instance
-let API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
-
-const client = new OpenAI({
-  apiKey: API_KEY,
-  dangerouslyAllowBrowser: true,
-});
 
 let form = document.querySelector("form");
 let promptInput = document.querySelector('input[name="prompt"]');
@@ -47,26 +40,25 @@ form.onsubmit = async (ev) => {
       reader.onerror = reject;
     });
 
-    const response = await client.chat.completions.create({
-      model: "gpt-4.1",
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: promptInput.value },
-            { type: "image_url", image_url: { url: imageBase64 } },
-          ],
-        },
-      ],
+    const response = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        imageBase64,
+        prompt: promptInput.value,
+      }),
     });
 
-let bloodTypeRaw = response.choices[0].message.content.trim();
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-// تنظيف النص لاستخراج فصيلة الدم فقط
-const bloodTypeMatch = bloodTypeRaw.match(/(A|B|AB|O)[+-]/i);
-const bloodType = bloodTypeMatch ? bloodTypeMatch[0].toUpperCase() : null;
+    const data = await response.json();
 
-const info = bloodType ? bloodInfo[bloodType] : "No information available.";
+    const bloodType = data.bloodType;
+    const info = bloodType ? bloodInfo[bloodType] : "No information available.";
 
     output.innerHTML = md.render(
       `**Blood Type:** ${bloodType}\n\n${info}`
