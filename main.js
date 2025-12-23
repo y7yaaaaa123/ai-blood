@@ -3,7 +3,7 @@ import MarkdownIt from "markdown-it";
 import './style.css';
 
 const md = new MarkdownIt(); // ✅ هنا أنشأنا الـ instance
-let API_KEY = process.env.OPENAI_API_KEY;
+let API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 
 const client = new OpenAI({
   apiKey: API_KEY,
