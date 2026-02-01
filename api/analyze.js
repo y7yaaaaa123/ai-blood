@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
   try {
     const response = await client.chat.completions.create({
-      model: "gpt-4.1-vision", // تأكد من النموذج الصحيح
+      model: "gpt-4o", // تأكد من النموذج الصحيح
       messages: [
         {
           role: "user",
