@@ -1,7 +1,7 @@
 import MarkdownIt from "markdown-it";
 import './style.css';
 
-const md = new MarkdownIt(); // ✅ هنا أنشأنا الـ instance
+const md = new MarkdownIt();
 
 let form = document.querySelector("form");
 let promptInput = document.querySelector('input[name="prompt"]');
@@ -16,23 +16,30 @@ fileInput.addEventListener("change", function () {
     : "Drag your file here or";
 });
 
-const bloodInfo = {
-  "A+": "A+ can receive from A+ & A-, O+ & O-. Can donate to A+ & AB+. RH+: can donate to + only. Male/Female: similar.",
-  "A-": "A- can receive from A- & O-. Can donate to A+, A-, AB+, AB-. RH-: universal donor for - types.",
-  "B+": "B+ can receive from B+ & B-, O+ & O-. Can donate to B+ & AB+. RH+: donation limited to + types.",
-  "B-": "B- can receive from B- & O-. Can donate to B+, B-, AB+, AB-. RH-: universal donor for - types.",
-  "AB+": "AB+ universal recipient. Can donate only to AB+. RH+ affects donation.",
-  "AB-": "AB- can receive from AB-, A-, B-, O-. Can donate to AB+ & AB-.",
-  "O+": "O+ can receive from O+ & O-. Can donate to O+, A+, B+, AB+.",
-  "O-": "O- universal donor. Can receive from O- only."
-};
+// 🧠 منطق ثابت لتحديد زمرة الدم
+function determineBloodType(a, b, rh) {
+  if (a && b && rh) return "AB+";
+  if (a && b && !rh) return "AB-";
+  if (a && !b && rh) return "A+";
+  if (a && !b && !rh) return "A-";
+  if (!a && b && rh) return "B+";
+  if (!a && b && !rh) return "B-";
+  if (!a && !b && rh) return "O+";
+  if (!a && !b && !rh) return "O-";
+}
+
+// threshold
+const isAgglutination = (v) => v === 2;
+const isUnclear = (v) => v === 1;
 
 form.onsubmit = async (ev) => {
   ev.preventDefault();
-  output.textContent = "Generating...";
+  output.textContent = "Analyzing image...";
 
   try {
     const file = fileInput.files[0];
+    if (!file) throw new Error("No image selected");
+
     const imageBase64 = await new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -42,9 +49,7 @@ form.onsubmit = async (ev) => {
 
     const response = await fetch('/api/analyze', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         imageBase64,
         prompt: promptInput.value,
@@ -56,12 +61,40 @@ form.onsubmit = async (ev) => {
     }
 
     const data = await response.json();
+    const raw = data.rawResponse;
 
-    const bloodType = data.bloodType;
-    const info = bloodType ? bloodInfo[bloodType] : "No information available.";
+    // استخراج القيم الرقمية
+    const a = Number(raw.match(/Anti-A:\s*(\d)/i)?.[1]);
+    const b = Number(raw.match(/Anti-B:\s*(\d)/i)?.[1]);
+    const rh = Number(raw.match(/Rh:\s*(\d)/i)?.[1]);
+
+    if ([a, b, rh].some(v => isNaN(v))) {
+      throw new Error("Invalid AI response");
+    }
+
+    // إذا أكو غموض → نرفض القرار
+    if (isUnclear(a) || isUnclear(b) || isUnclear(rh)) {
+      output.innerHTML = md.render(
+        `⚠️ **Result: Uncertain**  
+The image contains weak or unclear agglutination.`
+      );
+      return;
+    }
+
+    const bloodType = determineBloodType(
+      isAgglutination(a),
+      isAgglutination(b),
+      isAgglutination(rh)
+    );
 
     output.innerHTML = md.render(
-      `**Blood Type:** ${bloodType}\n\n${info}`
+      `### ✅ Blood Type Result  
+**${bloodType}**
+
+**Agglutination scores**
+- Anti-A: ${a}
+- Anti-B: ${b}
+- Rh: ${rh}`
     );
 
   } catch (e) {

@@ -32,7 +32,18 @@ Device for Blood Type Identification</h1>
 
       <div class="prompt-box">
         <input name="prompt" placeholder="Enter instructions here" type="text"
-                value="Determine agglutination in each well only. Bottom: Anti-A Middle: Anti-B Top: Rh Return only the blood type.">
+                value="Analyze the blood test image.
+
+For each well (Top: Anti-A, Middle: Anti-B, Bottom: Rh):
+Rate the agglutination visually using this scale ONLY:
+0 = Smooth (no clumping)
+1 = Weak / unclear clumping
+2 = Clear clumping
+
+Return the result exactly in this format:
+Anti-A: 0|1|2
+Anti-B: 0|1|2
+Rh: 0|1|2">
         <button type="submit" class="submit">Analyze</button>
 
       </div>
