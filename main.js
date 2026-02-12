@@ -16,7 +16,6 @@ fileInput.addEventListener("change", function () {
     : "Drag your file here or";
 });
 
-// 🧠 منطق ثابت لتحديد زمرة الدم
 function determineBloodType(a, b, rh) {
   if (a && b && rh) return "AB+";
   if (a && b && !rh) return "AB-";
@@ -72,10 +71,9 @@ form.onsubmit = async (ev) => {
       throw new Error("Invalid AI response");
     }
 
-    // إذا أكو غموض → نرفض القرار
     if (isUnclear(a) || isUnclear(b) || isUnclear(rh)) {
       output.innerHTML = md.render(
-        `⚠️ **Result: Uncertain**  
+        ` **Result: Uncertain**  
 The image contains weak or unclear agglutination.`
       );
       return;
@@ -88,10 +86,9 @@ The image contains weak or unclear agglutination.`
     );
 
     output.innerHTML = md.render(
-      `### ✅ Blood Type Result  
+      `###  Blood Type Result  
 **${bloodType}**
 
-**Agglutination scores**
 - Anti-A: ${a}
 - Anti-B: ${b}
 - Rh: ${rh}`
